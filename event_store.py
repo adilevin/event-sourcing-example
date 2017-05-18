@@ -24,9 +24,11 @@ class EventStore(object):
         })
         self.events.insert(event_payload)
 
-    def get_events(self, from_seq_num=0):
+    def get_events(self, events_filter=None, from_seq_num=0):
         "get all events beginning at a given sequence number"
-        cursor = self.events.find({"seq_num": {"$gte": from_seq_num}})
+        filter_expression = {"seq_num": {"$gte": from_seq_num}}
+        filter_expression.update(events_filter or {})
+        cursor = self.events.find(filter_expression)
         return [event for event in cursor]
 
     @staticmethod
@@ -46,4 +48,4 @@ class EventStore(object):
 
 
 if __name__ == "__main__":
-    EventStore.reset("localhost",27017,"test")
+    EventStore.reset("localhost", 27017, "test")
