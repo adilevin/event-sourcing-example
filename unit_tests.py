@@ -42,7 +42,7 @@ class TestEventStore(unittest.TestCase):
             self._assert_event(inserted_events[i], i, read_events[i])
 
     def test_get_events_with_offset(self):
-        "N events should be inserted correctly"
+        "get events with offset should run correctly"
         inserted_events = self._insert_events(5)
         read_events = self.event_store.get_events(from_seq_num=2)
         self.assertEquals(3, len(read_events))
@@ -51,6 +51,15 @@ class TestEventStore(unittest.TestCase):
                 expected_payload=inserted_events[i + 2],
                 expected_seqnum=i + 2,
                 event=read_events[i])
+
+    def test_get_events_with_filter(self):
+        "get events with filter should run correctly"
+        self._insert_events(5)
+        read_events = self.event_store.get_events(
+            events_filter={"aggregate_id": {"$gt": 2}})
+        self.assertEquals(2, len(read_events))
+        for event in read_events:
+            self.assertTrue(event["aggregate_id"] > 2)
 
     def _insert_events(self, num_of_events_to_insert):
         "Insert N events"
