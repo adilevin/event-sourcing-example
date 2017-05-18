@@ -10,10 +10,10 @@ class EventStore(object):
 
     "The event store"
 
-    def __init__(self):
-        self.client = MongoClient()
-        self.events = self.client.cqrs.events
-        self.counters = self.client.cqrs.counters
+    def __init__(self, host="localhost", port=27017, db_name="event_store"):
+        self.client = MongoClient(host=host, port=port)
+        self.events = self.client[db_name].events
+        self.counters = self.client[db_name].counters
 
     def add_event(self, payload):
         "add an event in the event store"
@@ -24,17 +24,26 @@ class EventStore(object):
         })
         self.events.insert(event_payload)
 
+    def get_events(self, from_seq_num=0):
+        "get all events beginning at a given sequence number"
+        cursor = self.events.find({"seq_num": {"$gte": from_seq_num}})
+        return [event for event in cursor]
+
     @staticmethod
-    def reset():
+    def reset(host="localhost", port=27017, db_name="event_store"):
         "clear the event store"
-        client = MongoClient()
-        client.drop_database("cqrs")
-        client.cqrs.counters.insert({"seq_num": 0})
+        client = MongoClient(host=host, port=port)
+        client.drop_database(db_name)
+        client[db_name].counters.insert({"seq_num": 0})
 
     def _get_next_seq_num(self):
         "get next sequence number"
         ret = self.counters.find_one_and_update(
             filter={},
             update={"$inc": {"seq_num": 1}},
-            return_document=ReturnDocument.AFTER)
+            return_document=ReturnDocument.BEFORE)
         return ret["seq_num"]
+
+
+if __name__ == "__main__":
+    EventStore.reset("localhost",27017,"test")
