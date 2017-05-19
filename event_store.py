@@ -33,10 +33,11 @@ class EventStore(object):
 
     @staticmethod
     def reset(host="localhost", port=27017, db_name="event_store"):
-        "clear the event store"
+        "clear the event store, and return the events collection"
         client = MongoClient(host=host, port=port)
         client.drop_database(db_name)
         client[db_name].counters.insert({"seq_num": 0})
+        return client[db_name].events
 
     def _get_next_seq_num(self):
         "get next sequence number"
