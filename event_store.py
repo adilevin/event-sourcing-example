@@ -37,6 +37,8 @@ class EventStore(object):
         client = MongoClient(host=host, port=port)
         client.drop_database(db_name)
         client[db_name].counters.insert({"seq_num": 0})
+        client[db_name].events.create_index(
+            keys="aggregate_id", name="index_by_aggregate_id")
         return client[db_name].events
 
     def _get_next_seq_num(self):

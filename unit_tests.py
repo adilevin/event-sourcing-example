@@ -22,10 +22,9 @@ class TestEventStore(unittest.TestCase):
             host=TEST_HOST, port=TEST_PORT, db_name=TEST_DB)
 
     def test_empty_event_store(self):
-        "The empty event store should have no events, and the events collection should be valid"
+        "The empty event store should have no events"
         events = self.event_store.get_events(from_seq_num=0)
         self.assertEquals(0, len(events))
-        self.assertEquals(self.events_collection.options(), {})
 
     def test_insertion_of_single_event(self):
         "A single event should be inserted correctly"
@@ -85,6 +84,7 @@ class TestEventStore(unittest.TestCase):
 
 
 from bank import Bank, AccountDoesNotExistException, NotEnoughMoneyForWithdrawalException
+
 
 class TestBank(unittest.TestCase):
     "Tests for Bank class"
@@ -153,7 +153,7 @@ class TestBank(unittest.TestCase):
         self.assertEquals(1200, self.bank.get_balance("captain america"))
         self.assertEquals(300, self.bank.get_balance("iron man"))
 
+
 if __name__ == '__main__':
-    #unittest.main(defaultTest="TestBank")
+    # unittest.main(defaultTest="TestBank")
     unittest.main()
-    

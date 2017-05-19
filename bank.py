@@ -31,7 +31,7 @@ class Bank(object):
     def get_balance(self, account):
         "Get balance of given account"
         account_events = self.event_store.get_events({
-            "accounts_involved": account})
+            "aggregate_id": account})
         account_balance, _ = self._calc_account_balance(
             account,
             account_events)
@@ -43,24 +43,24 @@ class Bank(object):
     def create_account(self, account):
         "create an account"
         self.event_store.add_event(
-            {"event_type": ACCOUNT_CREATED, "accounts_involved": [account]})
+            {"event_type": ACCOUNT_CREATED, "aggregate_id": account})
 
     def delete_account(self, account):
         "delete an account"
         self.event_store.add_event(
-            {"event_type": ACCOUNT_DELETED, "accounts_involved": [account]})
+            {"event_type": ACCOUNT_DELETED, "aggregate_id": account})
 
     def deposit(self, account, amount):
         "deposit money to an account"
         self.event_store.add_event({
             "event_type": MONEY_DEPOSITED,
-            "accounts_involved": [account],
+            "aggregate_id": account,
             "amount": amount})
 
     def transfer(self, from_account, to_account, amount):
         "transfer money fro one account to another"
         withdrawal_account_events = self.event_store.get_events(
-            {"accounts_involved": from_account})
+            {"aggregate_id": from_account})
         withdrawal_account_balance, last_withdrawal_number = self._calc_account_balance(
             from_account,
             withdrawal_account_events)
@@ -68,7 +68,7 @@ class Bank(object):
             raise NotEnoughMoneyForWithdrawalException
         self.event_store.add_event({
             "event_type": MONEY_TRANSFERED,
-            "accounts_involved": [from_account, to_account],
+            "aggregate_id": [from_account, to_account],
             "account_withdrawn": from_account,
             "account_credited": to_account,
             "amount": amount,
@@ -77,7 +77,7 @@ class Bank(object):
     def withdraw(self, account, amount):
         "withdraw money to an account"
         account_events = self.event_store.get_events(
-            {"accounts_involved": account})
+            {"aggregate_id": account})
         account_balance, last_withdrawal_number = self._calc_account_balance(
             account,
             account_events)
@@ -85,7 +85,7 @@ class Bank(object):
             raise NotEnoughMoneyForWithdrawalException
         self.event_store.add_event({
             "event_type": MONEY_WITHDRAWN,
-            "accounts_involved": [account],
+            "aggregate_id": account,
             "account_withdrawn": account,
             "amount": amount,
             "withdrawal_number": last_withdrawal_number + 1})
@@ -125,4 +125,3 @@ class Bank(object):
             name="widthdrawal_compound_index",
             unique=True,
             partialFilterExpression={"account_withdrawn": {"$exists": True}})
-        events_collection.create_index("accounts_involved")
