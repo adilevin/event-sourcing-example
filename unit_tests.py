@@ -86,7 +86,6 @@ class TestEventStore(unittest.TestCase):
 
 from bank import Bank, AccountDoesNotExistException, NotEnoughMoneyForWithdrawalException
 
-
 class TestBank(unittest.TestCase):
     "Tests for Bank class"
 

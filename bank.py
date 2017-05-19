@@ -18,6 +18,7 @@ ACCOUNT_CREATED = "account_created"
 ACCOUNT_DELETED = "account_deleted"
 MONEY_DEPOSITED = "money_deposited"
 MONEY_WITHDRAWN = "money_withdrawn"
+MONEY_TRANSFERED = "money_transfered"
 
 
 class Bank(object):
@@ -29,8 +30,10 @@ class Bank(object):
 
     def get_balance(self, account):
         "Get balance of given account"
-        account_events = self.event_store.get_events({"account": account})
+        account_events = self.event_store.get_events({
+            "accounts_involved": account})
         account_balance, _ = self._calc_account_balance(
+            account,
             account_events)
         if account_balance == None:
             raise AccountDoesNotExistException
@@ -40,38 +43,54 @@ class Bank(object):
     def create_account(self, account):
         "create an account"
         self.event_store.add_event(
-            {"event_type": ACCOUNT_CREATED, "account": account})
+            {"event_type": ACCOUNT_CREATED, "accounts_involved": [account]})
 
     def delete_account(self, account):
         "delete an account"
         self.event_store.add_event(
-            {"event_type": ACCOUNT_DELETED, "account": account})
+            {"event_type": ACCOUNT_DELETED, "accounts_involved": [account]})
 
     def deposit(self, account, amount):
         "deposit money to an account"
-        self.event_store.add_event(
-            {"event_type": MONEY_DEPOSITED, "account": account, "amount": amount})
+        self.event_store.add_event({
+            "event_type": MONEY_DEPOSITED,
+            "accounts_involved": [account],
+            "amount": amount})
 
     def transfer(self, from_account, to_account, amount):
         "transfer money fro one account to another"
-        self.withdraw(from_account, amount)
-        self.deposit(to_account, amount)
+        withdrawal_account_events = self.event_store.get_events(
+            {"accounts_involved": from_account})
+        withdrawal_account_balance, last_withdrawal_number = self._calc_account_balance(
+            from_account,
+            withdrawal_account_events)
+        if withdrawal_account_balance < amount:
+            raise NotEnoughMoneyForWithdrawalException
+        self.event_store.add_event({
+            "event_type": MONEY_TRANSFERED,
+            "accounts_involved": [from_account, to_account],
+            "account_withdrawn": from_account,
+            "account_credited": to_account,
+            "amount": amount,
+            "withdrawal_number": last_withdrawal_number + 1})
 
     def withdraw(self, account, amount):
         "withdraw money to an account"
-        account_events = self.event_store.get_events({"account": account})
+        account_events = self.event_store.get_events(
+            {"accounts_involved": account})
         account_balance, last_withdrawal_number = self._calc_account_balance(
+            account,
             account_events)
         if account_balance < amount:
             raise NotEnoughMoneyForWithdrawalException
         self.event_store.add_event({
             "event_type": MONEY_WITHDRAWN,
-            "account": account,
+            "accounts_involved": [account],
             "account_withdrawn": account,
             "amount": amount,
             "withdrawal_number": last_withdrawal_number + 1})
 
-    def _calc_account_balance(self, account_events):
+    def _calc_account_balance(self, account, account_events):
         "Calculate balance of an account given its events"
         account_balance = None
         last_withdrawal_number = -1
@@ -87,6 +106,12 @@ class Bank(object):
             elif event_type == MONEY_WITHDRAWN:
                 account_balance -= event["amount"]
                 last_withdrawal_number = event["withdrawal_number"]
+            elif event_type == MONEY_TRANSFERED:
+                if account == event["account_withdrawn"]:
+                    account_balance -= event["amount"]
+                    last_withdrawal_number = event["withdrawal_number"]
+                elif account == event["account_credited"]:
+                    account_balance += event["amount"]
         return account_balance, last_withdrawal_number
 
     @staticmethod
@@ -100,4 +125,4 @@ class Bank(object):
             name="widthdrawal_compound_index",
             unique=True,
             partialFilterExpression={"account_withdrawn": {"$exists": True}})
-        events_collection.create_index("account")
+        events_collection.create_index("accounts_involved")
