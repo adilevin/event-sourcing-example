@@ -5,7 +5,6 @@ Bank API, based on an event store
 import pymongo
 from event_store import EventStore
 
-
 class AccountDoesNotExistException(Exception):
     "Exception in case account does not exist"
 

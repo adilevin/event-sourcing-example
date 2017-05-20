@@ -2,7 +2,7 @@
 The event store
 """
 
-from pymongo import MongoClient, ReturnDocument
+from pymongo import MongoClient, ReturnDocument, ASCENDING
 import datetime
 
 
@@ -24,11 +24,14 @@ class EventStore(object):
         })
         self.events.insert(event_payload)
 
-    def get_events(self, events_filter=None, from_seq_num=0):
+    def get_events(self, events_filter=None, limit=0, from_seq_num=0):
         "get all events beginning at a given sequence number"
         filter_expression = {"seq_num": {"$gte": from_seq_num}}
         filter_expression.update(events_filter or {})
-        cursor = self.events.find(filter_expression)
+        cursor = self.events.find(
+            filter=filter_expression,
+            sort=[("seq_num", 1)],
+            limit=limit)
         return [event for event in cursor]
 
     @staticmethod
@@ -38,7 +41,9 @@ class EventStore(object):
         client.drop_database(db_name)
         client[db_name].counters.insert({"seq_num": 0})
         client[db_name].events.create_index(
-            keys="aggregate_id", name="index_by_aggregate_id")
+            keys=[("aggregate_id", ASCENDING),
+                  ("seq_num", ASCENDING)],
+            name="index by aggreage id and seq_num")
         return client[db_name].events
 
     def _get_next_seq_num(self):
