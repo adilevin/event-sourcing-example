@@ -17,20 +17,27 @@ class EventStore(object):
 
     def add_event(self, payload):
         "add an event in the event store"
-        event_payload = dict(payload)
-        event_payload.update({
-            "seq_num": self._get_next_seq_num(),
-            "time_stamp": datetime.datetime.now().isoformat()
-        })
-        self.events.insert(event_payload)
+        self._add_event_with_given_seq_num(payload, self._get_next_seq_num())
 
-    def get_events(self, events_filter=None, limit=0, from_seq_num=0):
+    def get_events_for_aggregate(self, aggregate_id, limit=0, from_seq_num=0):
         "get all events beginning at a given sequence number"
-        filter_expression = {"seq_num": {"$gte": from_seq_num}}
-        filter_expression.update(events_filter or {})
+        filter_expression = {"aggregate_id": aggregate_id}
+        if from_seq_num > 0:
+            filter_expression.update({"_id": {"$gte": from_seq_num}})
         cursor = self.events.find(
             filter=filter_expression,
-            sort=[("seq_num", 1)],
+            sort=[("_id", 1)],
+            limit=limit)
+        return [event for event in cursor]
+
+    def get_events(self, limit=0, from_seq_num=0):
+        "get all events beginning at a given sequence number"
+        filter_expression = {}
+        if from_seq_num > 0:
+            filter_expression.update({"_id": {"$gte": from_seq_num}})
+        cursor = self.events.find(
+            filter=filter_expression,
+            sort=[("_id", 1)],
             limit=limit)
         return [event for event in cursor]
 
@@ -42,9 +49,19 @@ class EventStore(object):
         client[db_name].counters.insert({"seq_num": 0})
         client[db_name].events.create_index(
             keys=[("aggregate_id", ASCENDING),
-                  ("seq_num", ASCENDING)],
+                  ("_id", ASCENDING)],
             name="index by aggreage id and seq_num")
         return client[db_name].events
+
+    def _add_event_with_given_seq_num(self, payload, seq_num):
+        "add an event in the event store with a given seq_num. For test purposes"
+        event_payload = dict(payload)
+        event_payload.update({
+            "_id": seq_num,
+            "seq_num": seq_num,
+            "time_stamp": datetime.datetime.now().isoformat()
+        })
+        self.events.insert(event_payload)
 
     def _get_next_seq_num(self):
         "get next sequence number"

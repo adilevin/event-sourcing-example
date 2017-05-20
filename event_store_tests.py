@@ -23,7 +23,7 @@ class TestEventStore(unittest.TestCase):
 
     def test_empty_event_store(self):
         "The empty event store should have no events"
-        events = self.event_store.get_events(from_seq_num=0)
+        events = self.event_store.get_events()
         self.assertEquals(0, len(events))
 
     def test_insertion_of_single_event(self):
@@ -37,7 +37,7 @@ class TestEventStore(unittest.TestCase):
     def _test_insertion_of_events(self, num_events):
         "N events should be inserted correctly"
         inserted_events = self._insert_events(num_events)
-        read_events = self.event_store.get_events(from_seq_num=0)
+        read_events = self.event_store.get_events()
         self.assertEquals(num_events, len(read_events))
         for i in range(num_events):
             self._assert_event(inserted_events[i], i, read_events[i])
@@ -63,14 +63,36 @@ class TestEventStore(unittest.TestCase):
             expected_seqnum=2,
             event=read_events[1])
 
-    def test_get_events_with_filter(self):
+    def test_events_by_aggregate_sorted(self):
+        "get events for an aggregate should return events sorted by seq_num"
+        for seq_num in [1, 4, 2, 3]:
+            self.event_store._add_event_with_given_seq_num(
+                payload={"aggregate_id": "x"}, seq_num=seq_num)
+        read_events = self.event_store.get_events_for_aggregate(aggregate_id="x")
+        for i in range(3):
+            self.assertGreater(
+                read_events[i + 1]["seq_num"], read_events[i]["seq_num"])
+
+    def test_all_events_sorted(self):
+        "get all should return events sorted by seq_num"
+        for seq_num in [1, 4, 2, 3]:
+            self.event_store._add_event_with_given_seq_num(
+                payload={"aggregate_id": seq_num}, seq_num=seq_num)
+        read_events = self.event_store.get_events()
+        for i in range(3):
+            self.assertGreater(
+                read_events[i + 1]["seq_num"], read_events[i]["seq_num"])
+
+    def test_get_events_for_aggregate(self):
         "get events with filter should run correctly"
-        self._insert_events(5)
-        read_events = self.event_store.get_events(
-            events_filter={"aggregate_id": {"$gt": 2}})
-        self.assertEquals(2, len(read_events))
+        for _ in range(4):
+            self.event_store.add_event(payload={"aggregate_id": "x"})
+            self.event_store.add_event(payload={"aggregate_id": "y"})
+        read_events = self.event_store.get_events_for_aggregate(
+            aggregate_id="x")
+        self.assertEquals(4, len(read_events))
         for event in read_events:
-            self.assertTrue(event["aggregate_id"] > 2)
+            self.assertEquals(0, event["seq_num"] % 2)
 
     def _insert_events(self, num_of_events_to_insert):
         "Insert N events"

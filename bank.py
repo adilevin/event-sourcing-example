@@ -29,8 +29,7 @@ class Bank(object):
 
     def get_balance(self, account):
         "Get balance of given account"
-        account_events = self.event_store.get_events({
-            "aggregate_id": account})
+        account_events = self.event_store.get_events_for_aggregate(aggregate_id=account)
         account_balance, _ = self._calc_account_balance(
             account,
             account_events)
@@ -58,8 +57,7 @@ class Bank(object):
 
     def transfer(self, from_account, to_account, amount):
         "transfer money fro one account to another"
-        withdrawal_account_events = self.event_store.get_events(
-            {"aggregate_id": from_account})
+        withdrawal_account_events = self.event_store.get_events_for_aggregate(aggregate_id=from_account)
         withdrawal_account_balance, last_withdrawal_number = self._calc_account_balance(
             from_account,
             withdrawal_account_events)
@@ -75,8 +73,7 @@ class Bank(object):
 
     def withdraw(self, account, amount):
         "withdraw money to an account"
-        account_events = self.event_store.get_events(
-            {"aggregate_id": account})
+        account_events = self.event_store.get_events_for_aggregate(aggregate_id=account)
         account_balance, last_withdrawal_number = self._calc_account_balance(
             account,
             account_events)
