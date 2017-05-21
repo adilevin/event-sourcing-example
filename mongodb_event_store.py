@@ -2,7 +2,7 @@ from pymongo import MongoClient, ReturnDocument, ASCENDING
 import datetime
 
 
-class EventStore(object):
+class MongoDBEventStore(object):
 
     def __init__(self, host="localhost", port=27017, db_name="event_store"):
         self.client = MongoClient(host=host, port=port)
@@ -62,7 +62,3 @@ class EventStore(object):
             update={"$inc": {"seq_num": 1}},
             return_document=ReturnDocument.BEFORE)
         return ret["seq_num"]
-
-
-if __name__ == "__main__":
-    EventStore.reset("localhost", 27017, "test")

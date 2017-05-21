@@ -1,5 +1,4 @@
 import pymongo
-from event_store import EventStore
 from account_events import MONEY_DEPOSITED, MONEY_TRANSFERED
 from account_events import MONEY_WITHDRAWN, ACCOUNT_CREATED, ACCOUNT_DELETED
 from account_statement_builder import AccountStatementBuilder
@@ -19,8 +18,8 @@ class TransactionFailedTryAgainLater(Exception):
 
 class Bank(object):
 
-    def __init__(self, host="localhost", port=27017, db_name="bank_event_store"):
-        self.event_store = EventStore(host=host, port=port, db_name=db_name)
+    def __init__(self, event_store):
+        self.event_store = event_store
 
     def get_statement(self, account):
         account_statement, _ = self._build_account_statement(account)
@@ -97,15 +96,3 @@ class Bank(object):
         if not builder.account_exists:
             raise AccountDoesNotExistException
         return builder.account_statement, builder.last_withdrawal_number
-
-    @staticmethod
-    def reset(host="localhost", port=27017, db_name="bank_event_store"):
-        "reset bank events store, including indexes"
-        events_collection = EventStore.reset(
-            host=host, port=port, db_name=db_name)
-        events_collection.create_index(
-            keys=[("account_withdrawn", pymongo.ASCENDING),
-                  ("withdrawal_number", pymongo.ASCENDING)],
-            name="widthdrawal_compound_index",
-            unique=True,
-            partialFilterExpression={"account_withdrawn": {"$exists": True}})

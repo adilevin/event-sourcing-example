@@ -1,18 +1,13 @@
 import unittest
 
-from kv_store import KVStore
-
-TEST_HOST = "localhost"
-TEST_PORT = 27017
-TEST_DB = "test_db"
+from mongodb_kv_store import MongoDBKVStore
 
 
-class TestKVStore(unittest.TestCase):
+class TestMongoDBKVStore(unittest.TestCase):
 
     def setUp(self):
-        KVStore.reset(host=TEST_HOST, port=TEST_PORT, db_name=TEST_DB)
-        self.kv_store = KVStore(
-            host=TEST_HOST, port=TEST_PORT, db_name=TEST_DB)
+        self.kv_store = MongoDBKVStore(
+            host="localhost", port=27017, db_name="test_kv", reset=True)
 
     def test_empty_kv_store(self):
         self.assertIsNone(self.kv_store.get("some key"))

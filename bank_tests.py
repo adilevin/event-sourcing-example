@@ -1,18 +1,14 @@
 import unittest
 
-TEST_HOST = "localhost"
-TEST_PORT = 27017
-TEST_DB = "test_db"
-
-from bank import Bank
 from bank import AccountDoesNotExistException, NotEnoughMoneyForWithdrawalException
+import factory
 
 
 class TestBank(unittest.TestCase):
 
     def setUp(self):
-        Bank.reset(host=TEST_HOST, port=TEST_PORT, db_name=TEST_DB)
-        self.bank = Bank(host=TEST_HOST, port=TEST_PORT, db_name=TEST_DB)
+        self.bank = factory.create_bank_with_mongodb_event_store(
+            host="localhost", port=27017, db_name="test_bank", reset=True)
 
     def test_empty_bank(self):
         with self.assertRaises(AccountDoesNotExistException):
@@ -62,8 +58,7 @@ class TestBank(unittest.TestCase):
         self.bank.deposit("captain america", 1000)
         self.bank.deposit("iron man", 500)
         self.bank.transfer(from_account="iron man",
-                           to_account="captain america",
-                           amount=200)
+                           to_account="captain america", amount=200)
         self.assertEquals(1200, self.bank.get_balance("captain america"))
         self.assertEquals(300, self.bank.get_balance("iron man"))
 

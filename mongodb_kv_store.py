@@ -1,10 +1,12 @@
 from pymongo import MongoClient
 
 
-class KVStore(object):
+class MongoDBKVStore(object):
 
-    def __init__(self, host="localhost", port=27017, db_name="kv-store"):
+    def __init__(self, host="localhost", port=27017, db_name="kv-store", reset=False):
         self.client = MongoClient(host=host, port=port)
+        if reset:
+            self.client.drop_database(db_name)
         self.collection = self.client[db_name].kv
 
     def set(self, key, value):
@@ -20,8 +22,3 @@ class KVStore(object):
         "Get the value at a key, or None if it doesn't exist"
         doc = self.collection.find_one(filter={"_id": key})
         return doc and doc["val"]
-
-    @staticmethod
-    def reset(host, port, db_name):
-        client = MongoClient(host=host, port=port)
-        client.drop_database(db_name)

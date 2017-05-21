@@ -1,18 +1,18 @@
 import unittest
 
-from event_store import EventStore
+from mongodb_event_store import MongoDBEventStore
 
 TEST_HOST = "localhost"
 TEST_PORT = 27017
 TEST_DB = "test_db"
 
 
-class TestEventStore(unittest.TestCase):
+class TestMongoDBEventStore(unittest.TestCase):
 
     def setUp(self):
-        self.events_collection = EventStore.reset(
+        self.events_collection = MongoDBEventStore.reset(
             host=TEST_HOST, port=TEST_PORT, db_name=TEST_DB)
-        self.event_store = EventStore(
+        self.event_store = MongoDBEventStore(
             host=TEST_HOST, port=TEST_PORT, db_name=TEST_DB)
 
     def test_empty_event_store(self):
