@@ -4,10 +4,9 @@ Bank API, based on an event store
 
 import pymongo
 from event_store import EventStore
-from account_statement import AccountStatement
 from account_events import MONEY_DEPOSITED, MONEY_TRANSFERED
 from account_events import MONEY_WITHDRAWN, ACCOUNT_CREATED, ACCOUNT_DELETED
-import account_statement_builder
+from account_statement_builder import AccountStatementBuilder
 
 
 class AccountDoesNotExistException(Exception):
@@ -106,15 +105,12 @@ class Bank(object):
         "Build account state from event store"
         account_events = self.event_store.get_events_for_aggregate(
             aggregate_id=account)
-        account_statement = AccountStatement(account)
-        last_withdrawal_number = -1
-        account_exists = False
+        builder = AccountStatementBuilder(account)
         for event in account_events:
-            account_exists, last_withdrawal_number = account_statement_builder.update_account_statement(
-                event, account_statement, account, account_exists, last_withdrawal_number)
-        if not account_exists:
+            builder.update_account_statement(event)
+        if not builder.account_exists:
             raise AccountDoesNotExistException
-        return account_statement, last_withdrawal_number
+        return builder.account_statement, builder.last_withdrawal_number
 
     @staticmethod
     def reset(host="localhost", port=27017, db_name="bank_event_store"):
