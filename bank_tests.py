@@ -41,7 +41,9 @@ class TestBank(unittest.TestCase):
         "An empty account has zero balance"
         self.bank.create_account("captain america")
         self.bank.deposit("captain america", 50)
+        account_statement = self.bank.get_statement("captain america")
         self.assertEquals(50, self.bank.get_balance("captain america"))
+        self.assertEquals(1, account_statement.get_num_of_transactions())
 
     def test_deposits_and_withdrawals(self):
         "Multiple deposits and withdrawals should sum up correctly"
