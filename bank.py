@@ -5,12 +5,17 @@ Bank API, based on an event store
 import pymongo
 from event_store import EventStore
 
+
 class AccountDoesNotExistException(Exception):
     "Exception in case account does not exist"
 
 
 class NotEnoughMoneyForWithdrawalException(Exception):
     "Exception in caes account does not have enough money for a withdrawal"
+
+
+class TransactionFailedTryAgainLater(Exception):
+    "Exception in case withdraw failed due to too much contention"
 
 
 ACCOUNT_CREATED = "account_created"
@@ -29,7 +34,8 @@ class Bank(object):
 
     def get_balance(self, account):
         "Get balance of given account"
-        account_events = self.event_store.get_events_for_aggregate(aggregate_id=account)
+        account_events = self.event_store.get_events_for_aggregate(
+            aggregate_id=account)
         account_balance, _ = self._calc_account_balance(
             account,
             account_events)
@@ -55,9 +61,11 @@ class Bank(object):
             "aggregate_id": account,
             "amount": amount})
 
-    def transfer(self, from_account, to_account, amount):
-        "transfer money fro one account to another"
-        withdrawal_account_events = self.event_store.get_events_for_aggregate(aggregate_id=from_account)
+    def _transfer_optimistic_locking(self, from_account, to_account, amount):
+        """Attempt to trasnfer money. May fail if there is not enough money or if
+        another withdraw is happenning in parallel"""
+        withdrawal_account_events = self.event_store.get_events_for_aggregate(
+            aggregate_id=from_account)
         withdrawal_account_balance, last_withdrawal_number = self._calc_account_balance(
             from_account,
             withdrawal_account_events)
@@ -71,20 +79,38 @@ class Bank(object):
             "amount": amount,
             "withdrawal_number": last_withdrawal_number + 1})
 
-    def withdraw(self, account, amount):
-        "withdraw money to an account"
-        account_events = self.event_store.get_events_for_aggregate(aggregate_id=account)
+    def transfer(self, from_account, to_account, amount):
+        "transfer money fro one account to another"
+        for _ in range(3):
+            try:
+                self._transfer_optimistic_locking(
+                    from_account=from_account, to_account=to_account, amount=amount)
+                break
+            except pymongo.errors.DuplicateKeyError:
+                raise TransactionFailedTryAgainLater()
+
+    def _withdraw_optimistic_locking(self, account, amount):
+        """Attempt to withdraw. May fail if there is not enough money or if
+        another withdraw is happenning in parallel"""
+        account_events = self.event_store.get_events_for_aggregate(
+            aggregate_id=account)
         account_balance, last_withdrawal_number = self._calc_account_balance(
-            account,
-            account_events)
+            account, account_events)
         if account_balance < amount:
             raise NotEnoughMoneyForWithdrawalException
         self.event_store.add_event({
-            "event_type": MONEY_WITHDRAWN,
-            "aggregate_id": account,
-            "account_withdrawn": account,
-            "amount": amount,
+            "event_type": MONEY_WITHDRAWN, "aggregate_id": account,
+            "account_withdrawn": account, "amount": amount,
             "withdrawal_number": last_withdrawal_number + 1})
+
+    def withdraw(self, account, amount):
+        "withdraw money to an account"
+        for _ in range(3):
+            try:
+                self._withdraw_optimistic_locking(account, amount)
+                break
+            except pymongo.errors.DuplicateKeyError:
+                raise TransactionFailedTryAgainLater()
 
     def _calc_account_balance(self, account, account_events):
         "Calculate balance of an account given its events"

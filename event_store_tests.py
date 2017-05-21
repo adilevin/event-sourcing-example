@@ -66,7 +66,7 @@ class TestEventStore(unittest.TestCase):
     def test_events_by_aggregate_sorted(self):
         "get events for an aggregate should return events sorted by seq_num"
         for seq_num in [1, 4, 2, 3]:
-            self.event_store._add_event_with_given_seq_num(
+            self.event_store.add_event_with_given_seq_num(
                 payload={"aggregate_id": "x"}, seq_num=seq_num)
         read_events = self.event_store.get_events_for_aggregate(aggregate_id="x")
         for i in range(3):
@@ -76,7 +76,7 @@ class TestEventStore(unittest.TestCase):
     def test_all_events_sorted(self):
         "get all should return events sorted by seq_num"
         for seq_num in [1, 4, 2, 3]:
-            self.event_store._add_event_with_given_seq_num(
+            self.event_store.add_event_with_given_seq_num(
                 payload={"aggregate_id": seq_num}, seq_num=seq_num)
         read_events = self.event_store.get_events()
         for i in range(3):
@@ -112,7 +112,7 @@ class TestEventStore(unittest.TestCase):
             expected_payload["aggregate_id"], event["aggregate_id"])
         self.assertEqual(expected_payload["data"], event["data"])
         self.assertEqual(expected_seqnum, event["seq_num"])
-        self.assertIsNotNone(event["time_stamp"])
+        self.assertIsNotNone(event["timestamp"])
 
 
 if __name__ == '__main__':
