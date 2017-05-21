@@ -5,6 +5,9 @@ Bank API, based on an event store
 import pymongo
 from event_store import EventStore
 from account_statement import AccountStatement
+from account_events import MONEY_DEPOSITED, MONEY_TRANSFERED
+from account_events import MONEY_WITHDRAWN, ACCOUNT_CREATED, ACCOUNT_DELETED
+import account_statement_builder
 
 
 class AccountDoesNotExistException(Exception):
@@ -19,13 +22,6 @@ class TransactionFailedTryAgainLater(Exception):
     "Exception in case withdraw failed due to too much contention"
 
 
-ACCOUNT_CREATED = "account_created"
-ACCOUNT_DELETED = "account_deleted"
-MONEY_DEPOSITED = "money_deposited"
-MONEY_WITHDRAWN = "money_withdrawn"
-MONEY_TRANSFERED = "money_transfered"
-
-
 class Bank(object):
 
     "API for Bank deposits and withdrawals"
@@ -35,9 +31,7 @@ class Bank(object):
 
     def get_statement(self, account):
         "Get current account statement including transactions and balance"
-        account_events = self.event_store.get_events_for_aggregate(
-            aggregate_id=account)
-        account_statement, _ = self._build_account_statement(account, account_events)
+        account_statement, _ = self._build_account_statement(account)
         return account_statement
 
     def get_balance(self, account):
@@ -65,10 +59,8 @@ class Bank(object):
     def _transfer_optimistic_locking(self, from_account, to_account, amount):
         """Attempt to trasnfer money. May fail if there is not enough money or if
         another withdraw is happenning in parallel"""
-        account_events = self.event_store.get_events_for_aggregate(
-            aggregate_id=from_account)
         withdrawn_account_statement, last_withdrawal_number = self._build_account_statement(
-            account=from_account, account_events=account_events)
+            from_account)
         if withdrawn_account_statement.get_balance() < amount:
             raise NotEnoughMoneyForWithdrawalException
         self.event_store.add_event({
@@ -92,10 +84,8 @@ class Bank(object):
     def _withdraw_optimistic_locking(self, account, amount):
         """Attempt to withdraw. May fail if there is not enough money or if
         another withdraw is happenning in parallel"""
-        account_events = self.event_store.get_events_for_aggregate(
-            aggregate_id=account)
         account_statement, last_withdrawal_number = self._build_account_statement(
-            account, account_events)
+            account)
         if account_statement.get_balance() < amount:
             raise NotEnoughMoneyForWithdrawalException
         self.event_store.add_event({
@@ -112,46 +102,16 @@ class Bank(object):
             except pymongo.errors.DuplicateKeyError:
                 raise TransactionFailedTryAgainLater()
 
-    def _build_account_statement(self, account, account_events):
-        "Build account state from account events."
+    def _build_account_statement(self, account):
+        "Build account state from event store"
+        account_events = self.event_store.get_events_for_aggregate(
+            aggregate_id=account)
         account_statement = AccountStatement(account)
         last_withdrawal_number = -1
         account_exists = False
         for event in account_events:
-            event_type = event["event_type"]
-            if event_type == ACCOUNT_CREATED:
-                account_exists = True
-            elif event_type == ACCOUNT_DELETED:
-                account_statement.reset()
-                account_exists = False
-                last_withdrawal_number = -1
-            elif event_type == MONEY_DEPOSITED:
-                account_statement.add_transaction(
-                    title="Deposit",
-                    timestamp=event["timestamp"],
-                    balance_diff=event["amount"]
-                )
-            elif event_type == MONEY_WITHDRAWN:
-                account_statement.add_transaction(
-                    title="Withdraw",
-                    timestamp=event["timestamp"],
-                    balance_diff=-event["amount"]
-                )
-                last_withdrawal_number = event["withdrawal_number"]
-            elif event_type == MONEY_TRANSFERED:
-                if account == event["account_withdrawn"]:
-                    account_statement.add_transaction(
-                        title="Transfer to another account",
-                        timestamp=event["timestamp"],
-                        balance_diff=-event["amount"]
-                    )
-                    last_withdrawal_number = event["withdrawal_number"]
-                elif account == event["account_credited"]:
-                    account_statement.add_transaction(
-                        title="Transfer from another account",
-                        timestamp=event["timestamp"],
-                        balance_diff=event["amount"]
-                    )
+            account_exists, last_withdrawal_number = account_statement_builder.update_account_statement(
+                event, account_statement, account, account_exists, last_withdrawal_number)
         if not account_exists:
             raise AccountDoesNotExistException
         return account_statement, last_withdrawal_number
