@@ -1,14 +1,8 @@
-"""
-The event store
-"""
-
 from pymongo import MongoClient, ReturnDocument, ASCENDING
 import datetime
 
 
 class EventStore(object):
-
-    "The event store"
 
     def __init__(self, host="localhost", port=27017, db_name="event_store"):
         self.client = MongoClient(host=host, port=port)
@@ -16,25 +10,21 @@ class EventStore(object):
         self.counters = self.client[db_name].counters
 
     def add_event(self, payload):
-        "add an event in the event store"
         self.add_event_with_given_seq_num(payload, self._get_next_seq_num())
 
     def get_events_for_aggregate(self, aggregate_id, limit=0, from_seq_num=0):
-        "get all events beginning at a given sequence number"
         return self._get_filtered_events(
             filter_expression={"aggregate_id": aggregate_id},
             limit=limit,
             from_seq_num=from_seq_num)
 
     def get_events(self, limit=0, from_seq_num=0):
-        "get all events beginning at a given sequence number"
         return self._get_filtered_events(
             filter_expression={},
             limit=limit,
             from_seq_num=from_seq_num)
 
     def _get_filtered_events(self, filter_expression, limit=0, from_seq_num=0):
-        "get all events beginning at a given sequence number"
         the_filter_expression = dict(filter_expression)
         if from_seq_num > 0:
             the_filter_expression.update({"_id": {"$gte": from_seq_num}})
@@ -67,7 +57,6 @@ class EventStore(object):
         self.events.insert(event_payload)
 
     def _get_next_seq_num(self):
-        "get next sequence number"
         ret = self.counters.find_one_and_update(
             filter={},
             update={"$inc": {"seq_num": 1}},
