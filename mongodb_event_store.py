@@ -1,4 +1,4 @@
-from pymongo import MongoClient, ReturnDocument, ASCENDING
+from pymongo import MongoClient, ASCENDING, errors
 import datetime
 
 
@@ -7,10 +7,24 @@ class MongoDBEventStore(object):
     def __init__(self, host="localhost", port=27017, db_name="event_store"):
         self.client = MongoClient(host=host, port=port)
         self.events = self.client[db_name].events
-        self.counters = self.client[db_name].counters
 
     def add_event(self, payload):
-        self.add_event_with_given_seq_num(payload, self._get_next_seq_num())
+        while True:
+            # Optimistic locking mechanism for making sure that an event with seq_num N is
+            # inserted before an event with seq_num N+1.
+            try:
+                unused_seq_num = self._get_unused_seq_num()
+                self.add_event_with_given_seq_num(payload, unused_seq_num)
+                break
+            except errors.DuplicateKeyError:
+                pass
+
+    def _get_unused_seq_num(self):
+        cursor = self.events.find(projection={"_id": 1}, sort=[("_id", -1)], limit=1)
+        last_seq_num = -1
+        for event in cursor:
+            last_seq_num = event["_id"]
+        return last_seq_num+1
 
     def get_events_for_aggregate(self, aggregate_id, limit=0, from_seq_num=0):
         return self._get_filtered_events(
@@ -39,7 +53,6 @@ class MongoDBEventStore(object):
         "clear the event store, and return the events collection"
         client = MongoClient(host=host, port=port)
         client.drop_database(db_name)
-        client[db_name].counters.insert({"seq_num": 0})
         client[db_name].events.create_index(
             keys=[("aggregate_id", ASCENDING),
                   ("_id", ASCENDING)],
@@ -55,10 +68,3 @@ class MongoDBEventStore(object):
             "timestamp": datetime.datetime.now().isoformat()
         })
         self.events.insert(event_payload)
-
-    def _get_next_seq_num(self):
-        ret = self.counters.find_one_and_update(
-            filter={},
-            update={"$inc": {"seq_num": 1}},
-            return_document=ReturnDocument.BEFORE)
-        return ret["seq_num"]
