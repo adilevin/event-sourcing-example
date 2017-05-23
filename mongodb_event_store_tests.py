@@ -1,6 +1,7 @@
 import unittest
 import mongodb_utils
-from mongodb_event_store import MongoDBEventStore
+from mongodb_event_store import MongoDBEventStore, SeqNumAlreadyUsedException, DuplicateKeyException
+from pymongo import ASCENDING
 
 TEST_HOST = "localhost"
 TEST_PORT = 27017
@@ -73,6 +74,21 @@ class TestMongoDBEventStore(unittest.TestCase):
         for i in range(3):
             self.assertGreater(
                 read_events[i + 1]["seq_num"], read_events[i]["seq_num"])
+
+    def test_seq_num_uniqueness(self):
+        self.event_store.add_event_with_given_seq_num(
+            payload={"aggregate_id": 1}, seq_num=1)
+        with self.assertRaises(SeqNumAlreadyUsedException):
+            self.event_store.add_event_with_given_seq_num(
+                payload={"aggregate_id": 2}, seq_num=1)
+
+    def test_duplicate_key_exception(self):
+        self.event_store.add_event(payload={"unique_key": "a"})
+        self.event_store.events.create_index(
+            keys=[("unique_key", ASCENDING)],
+            unique=True)
+        with self.assertRaises(DuplicateKeyException):
+            self.event_store.add_event(payload={"unique_key": "a"})
 
     def test_get_events_for_aggregate(self):
         for _ in range(4):

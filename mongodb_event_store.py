@@ -1,8 +1,8 @@
 from pymongo import MongoClient, ASCENDING, errors
+from event_store import EventStore, SeqNumAlreadyUsedException, DuplicateKeyException
 import datetime
 
-
-class MongoDBEventStore(object):
+class MongoDBEventStore(EventStore):
 
     def __init__(self, host="localhost", port=27017, db_name="event_store"):
         self.client = MongoClient(host=host, port=port)
@@ -16,15 +16,17 @@ class MongoDBEventStore(object):
                 unused_seq_num = self._get_unused_seq_num()
                 self.add_event_with_given_seq_num(payload, unused_seq_num)
                 break
-            except errors.DuplicateKeyError:
+            except SeqNumAlreadyUsedException:
                 pass
 
     def _get_unused_seq_num(self):
-        cursor = self.events.find(projection={"_id": 1}, sort=[("_id", -1)], limit=1)
+        cursor = self.events.find(
+            projection={"_id": 1},
+            sort=[("_id", -1)], limit=1)
         last_seq_num = -1
         for event in cursor:
             last_seq_num = event["_id"]
-        return last_seq_num+1
+        return last_seq_num + 1
 
     def get_events_for_aggregate(self, aggregate_id, limit=0, from_seq_num=0):
         return self._get_filtered_events(
@@ -61,10 +63,16 @@ class MongoDBEventStore(object):
 
     def add_event_with_given_seq_num(self, payload, seq_num):
         "add an event in the event store with a given seq_num. For test purposes"
-        event_payload = dict(payload)
-        event_payload.update({
-            "_id": seq_num,
-            "seq_num": seq_num,
-            "timestamp": datetime.datetime.now().isoformat()
-        })
-        self.events.insert(event_payload)
+        try:
+            event_payload = dict(payload)
+            event_payload.update({
+                "_id": seq_num,
+                "seq_num": seq_num,
+                "timestamp": datetime.datetime.now().isoformat()
+            })
+            self.events.insert(event_payload)
+        except errors.DuplicateKeyError as err:
+            if err.details["errmsg"].find("index: _id_") > 0:
+                raise SeqNumAlreadyUsedException
+            else:
+                raise DuplicateKeyException

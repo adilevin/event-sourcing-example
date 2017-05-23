@@ -1,8 +1,7 @@
-import pymongo
 from account_events import MONEY_DEPOSITED, MONEY_TRANSFERED
 from account_events import MONEY_WITHDRAWN, ACCOUNT_CREATED, ACCOUNT_DELETED
 from account_statement_builder import AccountStatementBuilder
-
+from event_store import DuplicateKeyException
 
 class AccountDoesNotExistException(Exception):
     pass
@@ -63,9 +62,10 @@ class Bank(object):
             try:
                 self._transfer_optimistic_locking(
                     from_account=from_account, to_account=to_account, amount=amount)
-                break
-            except pymongo.errors.DuplicateKeyError:
-                raise TransactionFailedTryAgainLater()
+                return
+            except DuplicateKeyException:
+                pass
+        raise TransactionFailedTryAgainLater()
 
     def _withdraw_optimistic_locking(self, account, amount):
         """Attempt to withdraw. May fail if there is not enough money or if
@@ -83,9 +83,10 @@ class Bank(object):
         for _ in range(3):
             try:
                 self._withdraw_optimistic_locking(account, amount)
-                break
-            except pymongo.errors.DuplicateKeyError:
-                raise TransactionFailedTryAgainLater()
+                return
+            except DuplicateKeyException:
+                pass
+        raise TransactionFailedTryAgainLater()
 
     def _build_account_statement(self, account):
         account_events = self.event_store.get_events_for_aggregate(
