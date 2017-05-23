@@ -7,13 +7,13 @@ This is a demonstration of Event Sourcing and CQRS.
 1. Clone this repository
 1. Install [Python 2.7](https://www.python.org/download/releases/2.7/)
 1. Install [PyMongo](https://api.mongodb.com/python/current/installation.html)
-1. [Install MongoDB](https://www.mongodb.com/download-center#community)
-1. Run mongod (the MongoDB daemon)
+1. Install [MongoDB](https://www.mongodb.com/download-center#community)
+1. Run [mongod](https://docs.mongodb.com/manual/reference/program/mongod/) locally
 
 ### Running the tests
-Run the following command in the repo's directory:
+1. Run the following command in the repo's folder:
 
-    python -m unittest discover -v -p *_tests.py
+        python -m unittest discover -v -p *_tests.py
 
 ## Background
 
