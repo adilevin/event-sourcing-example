@@ -1,13 +1,18 @@
 import unittest
-
+import mongodb_utils
 from mongodb_kv_store import MongoDBKVStore
 
+TEST_DB = "test_kv"
 
 class TestMongoDBKVStore(unittest.TestCase):
 
     def setUp(self):
         self.kv_store = MongoDBKVStore(
-            host="localhost", port=27017, db_name="test_kv", reset=True)
+            host="localhost", port=27017, db_name=TEST_DB, reset=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        mongodb_utils.drop_db(host="localhost", port=27017, db_name=TEST_DB)
 
     def test_empty_kv_store(self):
         self.assertIsNone(self.kv_store.get("some key"))

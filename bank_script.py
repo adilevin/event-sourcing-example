@@ -1,10 +1,11 @@
 """
 Script placeholder for debugging purposes
 """
-from bank import Bank, NotEnoughMoneyForWithdrawalException
-Bank.reset()
+import bank_factory
+from bank import NotEnoughMoneyForWithdrawalException
 
-B = Bank()
+B = bank_factory.create_bank_with_mongodb_event_store(host="localhost", port=27017, db_name="bank_db", reset=True)
+
 print "John creates account and deposits 10 + 20 + 30"
 B.create_account("john")
 for amount in [10, 20, 30]:

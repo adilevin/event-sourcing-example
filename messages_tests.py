@@ -1,15 +1,20 @@
 import unittest
-
 import messages_factory
+import mongodb_utils
 
 TEST_HOST = "localhost"
 TEST_PORT = 27017
+TEST_DB_NAME_PREFIX = "test_msgs"
 
 class TestMessaging(unittest.TestCase):
 
     def setUp(self):
         self.cmd_handler, self.messages_projector, self.messages_store = messages_factory.create_messages_cqrs(
-            host="localhost", port=27017, db_name_prefix="test_msgs", reset=True)
+            host=TEST_HOST, port=TEST_PORT, db_name_prefix=TEST_DB_NAME_PREFIX, reset=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        mongodb_utils.drop_dbs_by_prefix(host=TEST_HOST, port=TEST_PORT, db_name_prefix=TEST_DB_NAME_PREFIX)
 
     def test_empty_messages_store(self):
         self.assertEquals(-1, self.messages_store.get_cur_seq_num())

@@ -1,5 +1,5 @@
 import unittest
-
+import mongodb_utils
 from mongodb_event_store import MongoDBEventStore
 
 TEST_HOST = "localhost"
@@ -14,6 +14,10 @@ class TestMongoDBEventStore(unittest.TestCase):
             host=TEST_HOST, port=TEST_PORT, db_name=TEST_DB)
         self.event_store = MongoDBEventStore(
             host=TEST_HOST, port=TEST_PORT, db_name=TEST_DB)
+
+    @classmethod
+    def tearDownClass(cls):
+        mongodb_utils.drop_db(host=TEST_HOST, port=TEST_PORT, db_name=TEST_DB)
 
     def test_empty_event_store(self):
         events = self.event_store.get_events()
@@ -55,7 +59,8 @@ class TestMongoDBEventStore(unittest.TestCase):
         for seq_num in [1, 4, 2, 3]:
             self.event_store.add_event_with_given_seq_num(
                 payload={"aggregate_id": "x"}, seq_num=seq_num)
-        read_events = self.event_store.get_events_for_aggregate(aggregate_id="x")
+        read_events = self.event_store.get_events_for_aggregate(
+            aggregate_id="x")
         for i in range(3):
             self.assertGreater(
                 read_events[i + 1]["seq_num"], read_events[i]["seq_num"])
