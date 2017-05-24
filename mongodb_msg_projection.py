@@ -25,7 +25,7 @@ class MongoDBMsgProjection(object):
     def get_num_read(self, user_id):
         doc = self.num_unread_msg_per_user.find_one({"user_id": user_id})
         if doc:
-            return doc["num"]
+            return doc["num_unread"]
         else:
             return 0
 

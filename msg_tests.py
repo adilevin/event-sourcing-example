@@ -50,9 +50,12 @@ class TestMsg(unittest.TestCase):
     def test_marking_msg_as_read(self):
         self.cmd_handler.send_msg_to_user(
             user_id="user1", msg_id="msg1")
+        self.msg_projector.refresh(100)
+        self.assertEqual(1, self.query_handler.get_num_unread("user1"))
         self.cmd_handler.mark_msg_as_read(
             user_id="user1", msg_id="msg1")
         self.msg_projector.refresh(100)
+        self.assertEqual(0, self.query_handler.get_num_unread("user1"))
         msg_for_user = self.query_handler.get_msgs("user1")
         self.assertEquals(
             [{"msg_id": "msg1", "read": True}], msg_for_user)
