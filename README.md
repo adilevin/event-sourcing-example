@@ -9,7 +9,7 @@ This is a demonstration of Event Sourcing and CQRS.
 1. Install [PyMongo](https://api.mongodb.com/python/current/installation.html)
 1. Install [MongoDB](https://www.mongodb.com/download-center#community)
 1. Run [mongod](https://docs.mongodb.com/manual/reference/program/mongod/) locally
-1. Optional: Install [robomongo](https://robomongo.org/download) - a UI for MongoDB
+1. Optional: Install [robomongo](https://robomongo.org/download)
 
 ### Running the tests
 1. Run the following command in the repo's folder:
@@ -71,3 +71,5 @@ Then, hit "Enter" a couple of times in the first window, and use the variables C
     QUERY_HANDLER.get_num_unread("user_id")
 
 You can kill and restart the msg_projector, to see the effects of eventual consistency (i.e. queries will not reflect the most up-to-date state as follows by the commmands, but a little while after the projector is executed again, they catch up).
+
+Also, use Robomongo to examine the databases beginning with "msg", for an inside look.
