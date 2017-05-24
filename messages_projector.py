@@ -4,10 +4,10 @@ from projector import Projector
 
 class MessagesProjector(Projector):
 
-    def __init__(self, event_store, messages_store):
+    def __init__(self, event_store, msgs_projection):
         super(self.__class__, self).__init__(
             event_store=event_store,
-            projection_store=messages_store,
+            projection_store=msgs_projection,
             updaters={
                 messaging_events.MESSAGE_READ_BY_USER: self._on_msg_read,
                 messaging_events.MESSAGE_SENT_TO_USER: self._on_msg_sent

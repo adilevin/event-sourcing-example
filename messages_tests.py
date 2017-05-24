@@ -10,7 +10,7 @@ TEST_DB_NAME_PREFIX = "test_msgs"
 class TestMessaging(unittest.TestCase):
 
     def setUp(self):
-        self.cmd_handler, self.messages_projector, self.messages_store = \
+        self.cmd_handler, self.messages_projector, self.messages_store, self.query_handler = \
             messages_factory.create_messages_cqrs(
                 prod_config=False, reset=True)
 
@@ -28,7 +28,7 @@ class TestMessaging(unittest.TestCase):
         self.cmd_handler.send_message_to_user(
             user_id="user1", message_id="msg1")
         self.messages_projector.refresh(100)
-        msgs_for_user = self.messages_store.get_messages_for_user("user1")
+        msgs_for_user = self.query_handler.get_msgs_for_user("user1")
         self.assertEquals(
             [{"message_id": "msg1", "read": False}], msgs_for_user)
 
@@ -41,11 +41,11 @@ class TestMessaging(unittest.TestCase):
         self.messages_projector.refresh(max_num_events_to_process=3)
         for i in range(3):
             self.assertEquals([{"message_id": "msg%d" % i, "read": False}],
-                              self.messages_store.get_messages_for_user("user%d" % i))
+                              self.query_handler.get_msgs_for_user("user%d" % i))
         self.messages_projector.refresh(1)
         self.assertEquals([{"message_id": "msg0", "read": False},
                            {"message_id": "another message", "read": False}],
-                          self.messages_store.get_messages_for_user("user0"))
+                          self.query_handler.get_msgs_for_user("user0"))
 
     def test_marking_message_as_read(self):
         self.cmd_handler.send_message_to_user(
@@ -53,7 +53,7 @@ class TestMessaging(unittest.TestCase):
         self.cmd_handler.mark_message_as_read(
             user_id="user1", message_id="msg1")
         self.messages_projector.refresh(100)
-        msgs_for_user = self.messages_store.get_messages_for_user("user1")
+        msgs_for_user = self.query_handler.get_msgs_for_user("user1")
         self.assertEquals(
             [{"message_id": "msg1", "read": True}], msgs_for_user)
 
