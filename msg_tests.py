@@ -21,14 +21,14 @@ class TestMsg(unittest.TestCase):
 
     def test_empty_msg_store(self):
         self.assertEquals(-1, self.msg_store.get_cur_seq_num())
-        msg_for_user = self.msg_store.get_msg_for_user("user1")
+        msg_for_user = self.msg_store.get_msgs("user1")
         self.assertEquals([], msg_for_user)
 
     def test_adding_msg(self):
         self.cmd_handler.send_msg_to_user(
             user_id="user1", msg_id="msg1")
         self.msg_projector.refresh(100)
-        msg_for_user = self.query_handler.get_msg_for_user("user1")
+        msg_for_user = self.query_handler.get_msgs("user1")
         self.assertEquals(
             [{"msg_id": "msg1", "read": False}], msg_for_user)
 
@@ -41,11 +41,11 @@ class TestMsg(unittest.TestCase):
         self.msg_projector.refresh(max_num_events_to_process=3)
         for i in range(3):
             self.assertEquals([{"msg_id": "msg%d" % i, "read": False}],
-                              self.query_handler.get_msg_for_user("user%d" % i))
+                              self.query_handler.get_msgs("user%d" % i))
         self.msg_projector.refresh(1)
         self.assertEquals([{"msg_id": "msg0", "read": False},
                            {"msg_id": "another msg", "read": False}],
-                          self.query_handler.get_msg_for_user("user0"))
+                          self.query_handler.get_msgs("user0"))
 
     def test_marking_msg_as_read(self):
         self.cmd_handler.send_msg_to_user(
@@ -53,7 +53,7 @@ class TestMsg(unittest.TestCase):
         self.cmd_handler.mark_msg_as_read(
             user_id="user1", msg_id="msg1")
         self.msg_projector.refresh(100)
-        msg_for_user = self.query_handler.get_msg_for_user("user1")
+        msg_for_user = self.query_handler.get_msgs("user1")
         self.assertEquals(
             [{"msg_id": "msg1", "read": True}], msg_for_user)
 

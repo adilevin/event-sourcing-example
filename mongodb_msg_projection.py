@@ -17,10 +17,17 @@ class MongoDBMsgProjection(object):
             self._update_seq_num(-1)
             return -1
 
-    def get_msg_for_user(self, user_id):
+    def get_msgs(self, user_id):
         cursor = self.msg_per_user.find(
             filter={"user_id": user_id}, projection={"_id": False, "user_id": False})
         return [msg for msg in cursor]
+
+    def get_num_read(self, user_id):
+        doc = self.num_unread_msg_per_user.find_one({"user_id": user_id})
+        if doc:
+            return doc["num"]
+        else:
+            return 0
 
     def mark_msg_as_read(self, user_id, msg_id, new_seq_num):
         self.msg_per_user.update_one(

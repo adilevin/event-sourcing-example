@@ -26,3 +26,5 @@ try:
     print "Success"
 except NotEnoughMoneyForWithdrawalException:
     print "Sorry, Bella: You only have %d" % B.get_balance("bella")
+
+print "Use B"
