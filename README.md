@@ -37,4 +37,4 @@ CQRS is often used with Event Sourcing, because the event store keeps data in a 
 
 **bank.py** implements an API for banking, which works with an event store behind the scenes. It also implements concurrency controls for making sure that withdrawals or transfers between accounts are rejected in case there isn't enough money in the account.
 
-**messages_cmd_handler.py** and **messages_query_handler.py** implement segregated APIs for handling commands and queries of a messaging system.
+**msg_cmd_handler.py** and **msg_query_handler.py** implement segregated APIs for handling commands and queries of a messaging system.
