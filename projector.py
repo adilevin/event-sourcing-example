@@ -23,7 +23,7 @@ class Projector(object):
         events = self.event_store.get_events(
             limit=max_num_events_to_process, from_seq_num=cur_seq_num+1)
         for event in events:
-            self.updaters[event["event_type"]].__call__(event)
+            self._update_by_event(event)
             any_events_found = True
         return any_events_found
 
