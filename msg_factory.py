@@ -2,7 +2,7 @@ from msg_projector import MsgProjector
 from msg_cmd_handler import MsgCmdHandler
 from mongodb_msg_projection import MongoDBMsgProjection
 from mongodb_event_store import MongoDBEventStore
-from mongodb_msg_query_handler import MongoDBMsgQueryHandler
+from msg_query_handler import MsgQueryHandler
 
 def create_msg_cqrs(prod_config=False, reset=False):
     db_name_prefix = prod_config and "msg" or "test_msg"
@@ -22,5 +22,5 @@ def _create_msg_cqrs(host, port, db_name_prefix, reset):
     cmd_handler = MsgCmdHandler(event_store)
     msg_projector = MsgProjector(
         event_store=event_store, msg_projection=msg_projection)
-    query_handler = MongoDBMsgQueryHandler(msg_projection=msg_projection)
+    query_handler = MsgQueryHandler(msg_projection=msg_projection)
     return cmd_handler, msg_projector, msg_projection, query_handler
