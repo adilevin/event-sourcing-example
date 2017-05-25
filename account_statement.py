@@ -41,6 +41,12 @@ class AccountStatement(object):
         "Get statement as a Python dictionary"
         return self.dictionary
 
+    def __str__(self):
+        return '\n'.join([_printline(l) for l in self.as_dict()["lines"]])
+
+def _printline(line):
+    return '%s %5d %6d %s' % (line["timestamp"], line["balance_after"], line["balance_diff"], line["title"])
+
 if __name__ == "__main__":
     A = AccountStatement("adi")
     A.add_transaction(title="deposit", balance_diff=100, timestamp="4/5/32")

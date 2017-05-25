@@ -12,11 +12,11 @@ def create_msg_cqrs(prod_config=False, reset=False):
 def _create_msg_cqrs(host, port, db_name_prefix, reset):
     if reset:
         MongoDBMsgProjection.reset(
-            host=host, port=port, db_name=db_name_prefix + "_projected_msg_store")
+            host=host, port=port, db_name=db_name_prefix + "_projection")
         MongoDBEventStore.reset(
             host=host, port=port, db_name=db_name_prefix + "_event_store")
     msg_projection = MongoDBMsgProjection(
-        host=host, port=port, db_name=db_name_prefix + "_projected_msg_store")
+        host=host, port=port, db_name=db_name_prefix + "_projection")
     event_store = MongoDBEventStore(
         host=host, port=port, db_name=db_name_prefix + "_event_store")
     cmd_handler = MsgCmdHandler(event_store)

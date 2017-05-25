@@ -7,4 +7,10 @@ class DuplicateKeyException(Exception):
     pass
 
 class EventStore(object):
-    pass
+
+    def add_event(self, event):
+        pass
+
+    @staticmethod
+    def reset():
+        raise Exception("This is an abstract class")

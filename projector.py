@@ -7,25 +7,24 @@ class Projector(object):
         self.updaters = updaters
 
     def run_infinite_refresh_loop(self, seconds_to_sleep, max_num_events_to_process):
-        import time, sys
+        import time
+        import sys
         while True:
-            if self.refresh(max_num_events_to_process):
-                character = 'x'
+            num_new_events = self.refresh(max_num_events_to_process)
+            if num_new_events == 0:
+                sys.stdout.write('.')
             else:
-                character = '.'
-            sys.stdout.write(character)
+                sys.stdout.write(' ' + str(num_new_events) + ' ')
             sys.stdout.flush()
             time.sleep(seconds_to_sleep)
 
     def refresh(self, max_num_events_to_process):
         cur_seq_num = self.projection_store.get_cur_seq_num()
-        any_events_found = False
         events = self.event_store.get_events(
-            limit=max_num_events_to_process, from_seq_num=cur_seq_num+1)
+            limit=max_num_events_to_process, from_seq_num=cur_seq_num + 1)
         for event in events:
             self._update_by_event(event)
-            any_events_found = True
-        return any_events_found
+        return len(events)
 
     def _update_by_event(self, event):
         event_type = event["event_type"]
