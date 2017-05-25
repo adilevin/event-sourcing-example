@@ -44,8 +44,14 @@ class AccountStatement(object):
     def __str__(self):
         return '\n'.join([_printline(l) for l in self.as_dict()["lines"]])
 
+
 def _printline(line):
-    return '%s %5d %6d %s' % (line["timestamp"], line["balance_after"], line["balance_diff"], line["title"])
+    return '{0:15s} | {2:6d}   {3:10s} | balance : {1}'.format(
+        line["timestamp"],
+        line["balance_after"],
+        line["balance_diff"],
+        line["title"])
+
 
 if __name__ == "__main__":
     A = AccountStatement("adi")

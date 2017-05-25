@@ -33,14 +33,14 @@ class AccountStatementBuilder(object):
     def _on_transfer(self, event):
         if self.account == event["account_withdrawn"]:
             self.account_statement.add_transaction(
-                title="Transfer to another account",
+                title="Transfer",
                 timestamp=event["timestamp"],
                 balance_diff=-event["amount"]
             )
             self.last_withdrawal_number = event["withdrawal_number"]
         elif self.account == event["account_credited"]:
             self.account_statement.add_transaction(
-                title="Transfer from another account",
+                title="Transfer",
                 timestamp=event["timestamp"],
                 balance_diff=event["amount"]
             )
