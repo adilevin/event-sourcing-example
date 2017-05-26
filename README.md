@@ -62,7 +62,7 @@ For the CQRS messaging demo, type
 
 and in another window, run the projector
 
-    python msg_projector_runner.py
+    python msg_projector.py
 
 Then, hit "Enter" a couple of times in the first window, and use the variables CMD_HANDLER and QUERY_HANDLER in the python console, to run some more actions such as
 
