@@ -67,7 +67,6 @@ class MongoDBEventStore(EventStore):
             event_payload = dict(payload)
             event_payload.update({
                 "_id": seq_num,
-                "seq_num": seq_num,
                 "timestamp": datetime.datetime.now().isoformat()
             })
             self.events.insert(event_payload)
