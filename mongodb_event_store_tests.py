@@ -64,7 +64,7 @@ class TestMongoDBEventStore(unittest.TestCase):
             aggregate_id="x")
         for i in range(3):
             self.assertGreater(
-                read_events[i + 1]["seq_num"], read_events[i]["seq_num"])
+                read_events[i + 1]["_id"], read_events[i]["_id"])
 
     def test_all_events_sorted(self):
         for seq_num in [1, 4, 2, 3]:
@@ -73,7 +73,7 @@ class TestMongoDBEventStore(unittest.TestCase):
         read_events = self.event_store.get_events()
         for i in range(3):
             self.assertGreater(
-                read_events[i + 1]["seq_num"], read_events[i]["seq_num"])
+                read_events[i + 1]["_id"], read_events[i]["_id"])
 
     def test_seq_num_uniqueness(self):
         self.event_store.add_event_with_given_seq_num(
@@ -98,7 +98,7 @@ class TestMongoDBEventStore(unittest.TestCase):
             aggregate_id="x")
         self.assertEquals(4, len(read_events))
         for event in read_events:
-            self.assertEquals(0, event["seq_num"] % 2)
+            self.assertEquals(0, event["_id"] % 2)
 
     def _insert_events(self, num_of_events_to_insert):
         inserted_events = []
@@ -115,7 +115,7 @@ class TestMongoDBEventStore(unittest.TestCase):
         self.assertEqual(
             expected_payload["aggregate_id"], event["aggregate_id"])
         self.assertEqual(expected_payload["data"], event["data"])
-        self.assertEqual(expected_seqnum, event["seq_num"])
+        self.assertEqual(expected_seqnum, event["_id"])
         self.assertIsNotNone(event["timestamp"])
 
 

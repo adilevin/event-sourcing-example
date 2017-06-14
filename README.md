@@ -8,11 +8,15 @@ This is a demonstration of Event Sourcing and CQRS.
 1. Install [Python 2.7](https://www.python.org/download/releases/2.7/)
 1. Install [PyMongo](https://api.mongodb.com/python/current/installation.html)
 1. Install [MongoDB](https://www.mongodb.com/download-center#community)
-1. Run [mongod](https://docs.mongodb.com/manual/reference/program/mongod/) locally
+1. Run [mongod](https://docs.mongodb.com/manual/reference/program/mongod/) locally. This is needed for the tests and demos to run.
 1. Optional: Install [robomongo](https://robomongo.org/download)
 
 ### Running the tests
 1. Run the following command in the repo's folder:
+
+        run_tests.bat
+
+   which runs
 
         python -m unittest discover -v -p *_tests.py
 
@@ -42,7 +46,11 @@ CQRS is often used with Event Sourcing, because the event store keeps data in a 
 
 ## How to play around?
 
-For the banking demonstration, type
+For the banking demonstration, run
+
+    bank_demo.bat
+
+which invokes
 
     python -i bank_script.py
 
@@ -56,11 +64,15 @@ You can use Robomongo to examine the database named "bank".
 
 ---------
 
-For the CQRS messaging demo, type
+For the CQRS messaging demo, run 
+
+    msg_demo.bat 
+    
+This runs
 
     python -i msg_script.py
 
-and in another window, run the projector
+and in another window, it runs the projector
 
     python msg_projector.py
 

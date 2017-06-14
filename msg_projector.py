@@ -17,13 +17,13 @@ class MsgProjector(Projector):
         self.projection_store.mark_msg_as_read(
             user_id=event["aggregate_id"],
             msg_id=event["msg_id"],
-            new_seq_num=event["seq_num"])
+            new_seq_num=event["_id"])
 
     def _on_msg_sent(self, event):
         self.projection_store.add_msg_for_user(
             user_id=event["aggregate_id"],
             msg_id=event["msg_id"],
-            new_seq_num=event["seq_num"])
+            new_seq_num=event["_id"])
 
 if __name__=="__main__":
     import msg_factory
